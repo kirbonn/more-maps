@@ -55,13 +55,13 @@ for i in $(seq 1 $NUM_CONTAINERS); do
 
     echo "[+] Starting Wetty on port $WEB_PORT for $NAME"
     docker run -d \
-    --name wetty-$NAME \
-    -p $WEB_PORT:3000 \
-    --restart always \
-    butlerx/wetty \
-    --ssh-host 127.0.0.1 \
-    --ssh-port $SSH_PORT \
-    --ssh-user $USERNAME
+        --name wetty-$NAME \
+        --p $WEB_PORT:3000 \
+        --restart always \
+        butlerx/wetty \
+        --ssh-host 127.0.0.1 \
+        --ssh-port $SSH_PORT \
+        --ssh-user $USERNAME
 
 
     echo "$NAME => http://$SERVER_IP:$WEB_PORT (login: $USERNAME / $PASSWORD)" >> "$OUTPUT_FILE"
