@@ -21,7 +21,7 @@ for i in $(seq 1 $NUM_CONTAINERS); do
     WEB_PORT=$((BASE_WEB_PORT + i))
 
     echo "[+] Launching LXD container: $NAME"
-    lxc launch images:ubuntu/22.04 $NAME
+    lxc launch ubuntu:22.04 $NAME
     sleep 10
 
     echo "[+] Installing SSH and user inside $NAME"
