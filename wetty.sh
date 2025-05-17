@@ -11,7 +11,24 @@ BASE_SSH_PORT=2220
 OUTPUT_FILE="student_web_links.txt"
 SERVER_IP=$(hostname -I | awk '{print $1}')
 
-echo "[+] Creating containers and WebTTY setup..."
+echo "[+] Ensuring LXD is initialized..."
+
+if ! lxc network list | grep -q lxdbr0; then
+    echo "[+] Running lxd init --auto"
+    sudo lxd init --auto
+fi
+
+if ! lxc storage list | grep -q default; then
+    echo "[+] Creating default storage pool..."
+    lxc storage create default dir
+fi
+
+if ! lxc profile show default | grep -q root; then
+    echo "[+] Adding root disk to default profile..."
+    lxc profile device add default root disk path=/ pool=default
+fi
+
+echo "[+] Creating containers and Wetty access..."
 
 > "$OUTPUT_FILE"
 
@@ -20,11 +37,11 @@ for i in $(seq 1 $NUM_CONTAINERS); do
     SSH_PORT=$((BASE_SSH_PORT + i))
     WEB_PORT=$((BASE_WEB_PORT + i))
 
-    echo "[+] Launching LXD container: $NAME"
+    echo "[+] Launching container: $NAME"
     lxc launch ubuntu:22.04 $NAME
     sleep 10
 
-    echo "[+] Installing SSH and user inside $NAME"
+    echo "[+] Configuring container: $NAME"
     lxc exec $NAME -- bash -c "
         apt update && apt install -y openssh-server sudo
         adduser --disabled-password --gecos '' $USERNAME
@@ -33,10 +50,10 @@ for i in $(seq 1 $NUM_CONTAINERS); do
         systemctl enable ssh && systemctl restart ssh
     "
 
-    echo "[+] Forwarding SSH port $SSH_PORT"
+    echo "[+] Setting up SSH port forward: $SSH_PORT"
     lxc config device add $NAME sshproxy proxy listen=tcp:127.0.0.1:$SSH_PORT connect=tcp:127.0.0.1:22
 
-    echo "[+] Starting WebTTY for $NAME on port $WEB_PORT"
+    echo "[+] Starting Wetty on port $WEB_PORT for $NAME"
     docker run -d \
         --name wetty-$NAME \
         -p $WEB_PORT:3000 \
@@ -49,4 +66,4 @@ for i in $(seq 1 $NUM_CONTAINERS); do
     echo "$NAME => http://$SERVER_IP:$WEB_PORT (login: $USERNAME / $PASSWORD)" >> "$OUTPUT_FILE"
 done
 
-echo "[✓] Web terminals are ready! Links written to $OUTPUT_FILE"
+echo "[✓] All student terminals ready! Links saved in $OUTPUT_FILE"
